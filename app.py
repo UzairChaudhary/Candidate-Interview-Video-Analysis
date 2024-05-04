@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import subprocess
 from predictemt import pred, removeout, vidframe, ssimscore1
 from flask import Flask, request, render_template, jsonify
 import speech_recognition as sr
@@ -16,6 +17,8 @@ from moviepy.editor import VideoFileClip
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
+from flask_cors import CORS
+
 import spacy, fitz
 from ResumeAnalysis.utility.downloadFile import download_file
 from ResumeAnalysis.utility.extractTextFromPdf import extractTextFromPdf
@@ -24,12 +27,62 @@ from ResumeAnalysis.calculateSimilarity import calculate_similarity
 facec = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')   #load face detection cascade file
 
 app = Flask(__name__)
+CORS(app)
+#CORS(app, origins="http://localhost:3001")
 app.secret_key = 'some secret key'
 
+# def fix_video_metadata(video_path):
+#     output_path = video_path.replace(".mp4", "_fixed.mp4")
+
+#     command = [
+#         "ffmpeg",
+#         "-i", video_path,
+#         "-c", "copy",
+#         "-movflags", "faststart",
+#         output_path
+#     ]
+
+#     subprocess.run(command, check=True)
+#     return output_path
+
+def vedio_to_text():
+    command2mp3 = "ffmpeg -i uploads\\recorded_video.webm uploads\\Audio.mp3"
+    command2wav = "ffmpeg -i uploads\\Audio.mp3 Audio.wav"
+
+    os.system(command2mp3)
+    os.system(command2wav)
+    r = sr.Recognizer()
+    audio = sr.AudioFile('Audio.wav')
+    # with sr.AudioFile('Audio.wav') as source:
+    #     audio = r.listen(source)
+    #     try:
+    #         # Google speech recognition (You can select from other options)
+    #         text = r.recognize_google(audio)
+    #         # Save the text to a .txt file in the root directory
+    #         with open("uploads/speech_text.txt", "w") as file:
+    #             file.write(text)
+            
+    #         # Printing speech
+    #         print('Speech Detected:')
+    #         print(text)
+        
+    #     except:
+    #         print('Could not hear anything!')
+    with audio as source:
+        audio = r.record(source)
+        text=r.recognize_google(audio)
+        # Save the text to a .txt file in the root directory
+        with open("uploads/speech_text.txt", "w") as file:
+            file.write(text)
+        
+        # Printing speech
+        print('Speech Detected: ')
+        print(text)
 
 def video_to_text(video_path):
     #----------------------------------Speech Detection Part-----------------------------------#
-
+    # Fix video metadata
+    #fixed_video_path = fix_video_metadata(video_path)
     video = VideoFileClip(video_path)
     audio_path = video_path[:-4] + ".wav"
     audio = video.audio
@@ -56,8 +109,8 @@ def video_to_text(video_path):
 #-------------------------------------------------------------------------------------------#
 def text_sentiment_analysis():
     # Download VADER lexicon
-    nltk.download('vader_lexicon')
-    nltk.download('punkt')
+    #nltk.download('vader_lexicon')
+    #nltk.download('punkt')
     # Initialize the VADER sentiment analyzer
     sid = SentimentIntensityAnalyzer()
 
@@ -105,10 +158,14 @@ def text_sentiment_analysis():
     # Determine overall sentiment
     if overall_scores['compound'] > 0:
         print("Overall Sentiment: Positive")
+        return "Positive"
     elif overall_scores['compound'] < 0:
         print("Overall Sentiment: Negative")
+        return "Negative"
     else:
         print("Overall Sentiment: Neutral")
+        return "Neutral"
+        
 
 
 
@@ -129,8 +186,8 @@ def upload():
             f.save(file_path)  #saving uploaded video
 
             result, face = vidframe(file_path) #running vidframe with the uploaded video
-            video_to_text(file_path)
-            text_sentiment_analysis()
+            vedio_to_text()
+            overall_sentiment=text_sentiment_analysis()
             #os.remove(file_path)  #removing the video as we dont need it anymore
         else:
             result, face = vidframe(0)
@@ -166,7 +223,7 @@ def upload():
         img.seek(0)
         plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode()) #piechart object that can be returned to the html
         #return render_template("predict.html", posture = posture, smileindex=smileindex, plot_url=plot_data) #returning all the three variable that can be displayed in html
-        return jsonify({'Posture':posture, 'smileIndex':smileindex, 'Angry':counts[0], 'Disgust':counts[1], 'Fear':counts[2], 'Happy':counts[3], 'Sad':counts[4], 'Surprise':counts[5], 'Neutral':counts[6]})
+        return jsonify({'Posture':posture,"Sentiment":overall_sentiment, 'smileIndex':smileindex, 'Angry':counts[0], 'Disgust':counts[1], 'Fear':counts[2], 'Happy':counts[3], 'Sad':counts[4], 'Surprise':counts[5], 'Neutral':counts[6]})
     return None
 
 download_folder = 'ResumeAnalysis/Downloads'  # Update this to the desired folder path
