@@ -224,13 +224,13 @@ def upload():
         #counts = [result.count('angry'),result.count('disgust'),result.count('fear'),result.count('happy'),result.count('sad')]
         counts = [result.count('Angry'),result.count('Disgust'),result.count('Fear'),result.count('Happy'),result.count('Sad'),result.count('Surprise'),result.count('Neutral')]
         ax.pie(counts, labels = emotion,autopct='%1.2f%%')   #adding pie chart
-        print("Angry: ",counts[0])
-        print("Disgust: ",counts[1])
-        print("Fear: ",counts[2])#Nervousness
-        print("Happy: ",counts[3])
-        print("Sad: ",counts[4])#Lack of Enthusiasm
-        print("Surprise: ",counts[5])
-        print("Neutral: ",counts[6])
+        # print("Angry: ",counts[0])
+        # print("Disgust: ",counts[1])
+        # print("Fear: ",counts[2])#Nervousness
+        # print("Happy: ",counts[3])
+        # print("Sad: ",counts[4])#Lack of Enthusiasm
+        # print("Surprise: ",counts[5])
+        # print("Neutral: ",counts[6])
         img = io.BytesIO()
         plt.savefig(img, format='png')   #saving piechart
         img.seek(0)
@@ -258,22 +258,38 @@ def upload():
         else:
             confidence_state = "Low"
         #return jsonify({'Posture':posture,"Sentiment":overall_sentiment, 'smileIndex':smileindex, 'Angry':counts[0], 'Disgust':counts[1], 'Fear':counts[2], 'Happy':counts[3], 'Sad':counts[4], 'Surprise':counts[5], 'Neutral':counts[6]}),200
+        print("Posture: ",posture)
+        print("Sentiment: ",overall_sentiment)
+        print("Smile Index:", smileindex)
+        print("Angry:", counts[0])
+        print("Disgust:", counts[1])
+        print("Fear:", counts[2])
+        print("Happy:", counts[3])
+        print("Sad:", counts[4])  # Note: 'LackOfEnthusiasm' is replaced with 'Sad' here
+        print("Lack of Enthusiasm:", counts[4])  # Note: 'LackOfEnthusiasm' is replaced with 'Sad' here
+        print("Surprise:", counts[5])
+        print("Neutral:", counts[6])
+        print("Nervousness Score:", nervousness_score)
+        print("Confidence Score:", confidence_score)
+        print("Nervousness State:", nervousness_state)
+        print("Confidence State:", confidence_state)
+        
         return jsonify({
             'Posture': posture,
             'Sentiment': overall_sentiment,
-            'Smile Index': smileindex,
+            'SmileIndex': smileindex,
             'Angry': counts[0],
             'Disgust': counts[1],
             'Fear': counts[2],
             'Happy': counts[3],
             'Sad': counts[4],
-            'Lack of Enthusiasm': counts[4],
+            'LackOfEnthusiasm': counts[4],
             'Surprise': counts[5],
             'Neutral': counts[6],
-            'Nervousness Score': nervousness_score,
-            'Confidence Score': confidence_score,
-            'Nervousness State': nervousness_state,
-            'Confidence State': confidence_state
+            'NervousnessScore': nervousness_score,
+            'ConfidenceScore': confidence_score,
+            'NervousnessState': nervousness_state,
+            'ConfidenceState': confidence_state
         }), 200
     return None
 
