@@ -33,14 +33,25 @@ app.secret_key = 'some secret key'
 
 
 
-def vedio_to_text():
-    command2mp3 = "ffmpeg -i uploads\\recorded_video.webm Audio.wav"
+def vedio_to_text(path):
+    # Extracting file name and extension
+    file_name, extension = os.path.splitext(path)
+    
+    # Constructing output file path
+    audio_output_path = f"{file_name}.wav"
+    
+    # Constructing the ffmpeg command
+    command2mp3 = f"ffmpeg -i {path} {audio_output_path}"
+    
+    # Execute the command
+    os.system(command2mp3)
+    #command2mp3 = "ffmpeg -i uploads\\demoInterviewVideo.mp4 Audio.wav"
     #command2wav = "ffmpeg -i uploads\\Audio.mp3 Audio.wav"
 
-    os.system(command2mp3)
+    #os.system(command2mp3)
     #os.system(command2wav)
     r = sr.Recognizer()
-    audio = sr.AudioFile('Audio.wav')
+    audio = sr.AudioFile(audio_output_path)
     # with sr.AudioFile('Audio.wav') as source:
     #     audio = r.listen(source)
     #     try:
@@ -186,7 +197,7 @@ def upload():
             f.save(file_path)  #saving uploaded video
 
             result, face = vidframe(file_path) #running vidframe with the uploaded video
-            vedio_to_text()
+            vedio_to_text(file_path)
             overall_sentiment=text_sentiment_analysis()
             #os.remove(file_path)  #removing the video as we dont need it anymore
             #os.remove("Audio.wav")
@@ -215,9 +226,9 @@ def upload():
         ax.pie(counts, labels = emotion,autopct='%1.2f%%')   #adding pie chart
         print("Angry: ",counts[0])
         print("Disgust: ",counts[1])
-        print("Fear: ",counts[2])
+        print("Fear: ",counts[2])#Nervousness
         print("Happy: ",counts[3])
-        print("Sad: ",counts[4])
+        print("Sad: ",counts[4])#Lack of Enthusiasm
         print("Surprise: ",counts[5])
         print("Neutral: ",counts[6])
         img = io.BytesIO()
@@ -225,7 +236,45 @@ def upload():
         img.seek(0)
         plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode()) #piechart object that can be returned to the html
         #return render_template("predict.html", posture = posture, smileindex=smileindex, plot_url=plot_data) #returning all the three variable that can be displayed in html
-        return jsonify({'Posture':posture,"Sentiment":overall_sentiment, 'smileIndex':smileindex, 'Angry':counts[0], 'Disgust':counts[1], 'Fear':counts[2], 'Happy':counts[3], 'Sad':counts[4], 'Surprise':counts[5], 'Neutral':counts[6]}),200
+        
+        # Calculate the scores for nervousness and confidence
+        nervousness_score = counts[2] + counts[0] + counts[1]  # Fear + Angry + Disgust
+        confidence_score = counts[3] + counts[6]  # Happy + Neutral
+
+        # Normalize the scores
+        total_emotions = sum(counts)
+        if total_emotions > 0:
+            nervousness_score /= total_emotions
+            confidence_score /= total_emotions
+
+        # Determine the emotional state based on scores
+        if nervousness_score > 0.5:
+            nervousness_state = "High"
+        else:
+            nervousness_state = "Low"
+
+        if confidence_score > 0.5:
+            confidence_state = "High"
+        else:
+            confidence_state = "Low"
+        #return jsonify({'Posture':posture,"Sentiment":overall_sentiment, 'smileIndex':smileindex, 'Angry':counts[0], 'Disgust':counts[1], 'Fear':counts[2], 'Happy':counts[3], 'Sad':counts[4], 'Surprise':counts[5], 'Neutral':counts[6]}),200
+        return jsonify({
+            'Posture': posture,
+            'Sentiment': overall_sentiment,
+            'Smile Index': smileindex,
+            'Angry': counts[0],
+            'Disgust': counts[1],
+            'Fear': counts[2],
+            'Happy': counts[3],
+            'Sad': counts[4],
+            'Lack of Enthusiasm': counts[4],
+            'Surprise': counts[5],
+            'Neutral': counts[6],
+            'Nervousness Score': nervousness_score,
+            'Confidence Score': confidence_score,
+            'Nervousness State': nervousness_state,
+            'Confidence State': confidence_state
+        }), 200
     return None
 
 download_folder = 'ResumeAnalysis/Downloads'  # Update this to the desired folder path
