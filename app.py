@@ -58,14 +58,19 @@ def vedio_to_text():
     #         print('Could not hear anything!')
     with audio as source:
         audio = r.record(source)
-        text=r.recognize_google(audio)
-        # Save the text to a .txt file in the root directory
-        with open("uploads/speech_text.txt", "w") as file:
-            file.write(text)
-        
-        # Printing speech
-        print('Speech Detected: ')
-        print(text)
+        try:
+            text=r.recognize_google(audio)
+            # Save the text to a .txt file in the root directory
+            with open("uploads/speech_text.txt", "w") as file:
+                file.write(text)
+            
+            # Printing speech
+            print('Speech Detected: ')
+            print(text)
+        except:
+            print('Could not hear anything!')
+            with open("uploads/speech_text.txt", "w") as file:
+                file.write("")
 
 def video_to_text(video_path):
     #----------------------------------Speech Detection Part-----------------------------------#
@@ -110,6 +115,10 @@ def text_sentiment_analysis():
         paragraph = file.read()
     # Tokenize the paragraph into sentences
     sentences = nltk.sent_tokenize(paragraph)
+    
+    if not sentences:
+        print("No sentences found in the input text.")
+        return "Neutral"
 
     # Perform sentiment analysis on each sentence
     overall_scores = {'neg': 0, 'neu': 0, 'pos': 0, 'compound': 0}
@@ -131,30 +140,33 @@ def text_sentiment_analysis():
         else:
             print("Overall Sentiment: Neutral")
         print()
+    
     # Calculate the average sentiment scores
     num_sentences = len(sentences)
-    for key in overall_scores:
-        overall_scores[key] /= num_sentences
+    if num_sentences != 0:
+        for key in overall_scores:
+            overall_scores[key] /= num_sentences
 
-    # Print the combined sentiment analysis of the whole paragraph
-    print("Combining the Sentiment Analysis result...")
-    print("Negative Sentiment:", overall_scores['neg'])
-    print("Neutral Sentiment:", overall_scores['neu'])
-    print("Positive Sentiment:", overall_scores['pos'])
-    print("Compound Sentiment Score:", overall_scores['compound'])
+        # Print the combined sentiment analysis of the whole paragraph
+        print("Combining the Sentiment Analysis result...")
+        print("Negative Sentiment:", overall_scores['neg'])
+        print("Neutral Sentiment:", overall_scores['neu'])
+        print("Positive Sentiment:", overall_scores['pos'])
+        print("Compound Sentiment Score:", overall_scores['compound'])
 
-    # Determine overall sentiment
-    if overall_scores['compound'] > 0:
-        print("Overall Sentiment: Positive")
-        return "Positive"
-    elif overall_scores['compound'] < 0:
-        print("Overall Sentiment: Negative")
-        return "Negative"
+        # Determine overall sentiment
+        if overall_scores['compound'] > 0:
+            print("Overall Sentiment: Positive")
+            return "Positive"
+        elif overall_scores['compound'] < 0:
+            print("Overall Sentiment: Negative")
+            return "Negative"
+        else:
+            print("Overall Sentiment: Neutral")
+            return "Neutral"
     else:
-        print("Overall Sentiment: Neutral")
+        print("Cannot calculate average sentiment scores due to zero sentences.")
         return "Neutral"
-        
-
 
 
 @app.route('/', methods=['GET'])
