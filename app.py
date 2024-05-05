@@ -31,26 +31,14 @@ CORS(app)
 #CORS(app, origins="http://localhost:3001")
 app.secret_key = 'some secret key'
 
-# def fix_video_metadata(video_path):
-#     output_path = video_path.replace(".mp4", "_fixed.mp4")
 
-#     command = [
-#         "ffmpeg",
-#         "-i", video_path,
-#         "-c", "copy",
-#         "-movflags", "faststart",
-#         output_path
-#     ]
-
-#     subprocess.run(command, check=True)
-#     return output_path
 
 def vedio_to_text():
-    command2mp3 = "ffmpeg -i uploads\\recorded_video.webm uploads\\Audio.mp3"
-    command2wav = "ffmpeg -i uploads\\Audio.mp3 Audio.wav"
+    command2mp3 = "ffmpeg -i uploads\\recorded_video.webm Audio.wav"
+    #command2wav = "ffmpeg -i uploads\\Audio.mp3 Audio.wav"
 
     os.system(command2mp3)
-    os.system(command2wav)
+    #os.system(command2wav)
     r = sr.Recognizer()
     audio = sr.AudioFile('Audio.wav')
     # with sr.AudioFile('Audio.wav') as source:
@@ -189,6 +177,8 @@ def upload():
             vedio_to_text()
             overall_sentiment=text_sentiment_analysis()
             #os.remove(file_path)  #removing the video as we dont need it anymore
+            #os.remove("Audio.wav")
+            #os.remove("uploads/speech_text.txt")
         else:
             result, face = vidframe(0)
         try:
@@ -223,7 +213,7 @@ def upload():
         img.seek(0)
         plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode()) #piechart object that can be returned to the html
         #return render_template("predict.html", posture = posture, smileindex=smileindex, plot_url=plot_data) #returning all the three variable that can be displayed in html
-        return jsonify({'Posture':posture,"Sentiment":overall_sentiment, 'smileIndex':smileindex, 'Angry':counts[0], 'Disgust':counts[1], 'Fear':counts[2], 'Happy':counts[3], 'Sad':counts[4], 'Surprise':counts[5], 'Neutral':counts[6]})
+        return jsonify({'Posture':posture,"Sentiment":overall_sentiment, 'smileIndex':smileindex, 'Angry':counts[0], 'Disgust':counts[1], 'Fear':counts[2], 'Happy':counts[3], 'Sad':counts[4], 'Surprise':counts[5], 'Neutral':counts[6]}),200
     return None
 
 download_folder = 'ResumeAnalysis/Downloads'  # Update this to the desired folder path
