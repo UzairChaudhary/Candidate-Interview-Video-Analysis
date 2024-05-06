@@ -24,6 +24,8 @@ from ResumeAnalysis.utility.downloadFile import download_file
 from ResumeAnalysis.utility.extractTextFromPdf import extractTextFromPdf
 from ResumeAnalysis.calculateSimilarity import calculate_similarity
 
+import whisper
+
 facec = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')   #load face detection cascade file
 
 app = Flask(__name__)
@@ -45,43 +47,25 @@ def vedio_to_text(path):
     
     # Execute the command
     os.system(command2mp3)
-    #command2mp3 = "ffmpeg -i uploads\\demoInterviewVideo.mp4 Audio.wav"
-    #command2wav = "ffmpeg -i uploads\\Audio.mp3 Audio.wav"
-
-    #os.system(command2mp3)
-    #os.system(command2wav)
-    r = sr.Recognizer()
-    audio = sr.AudioFile(audio_output_path)
-    # with sr.AudioFile('Audio.wav') as source:
-    #     audio = r.listen(source)
-    #     try:
-    #         # Google speech recognition (You can select from other options)
-    #         text = r.recognize_google(audio)
-    #         # Save the text to a .txt file in the root directory
-    #         with open("uploads/speech_text.txt", "w") as file:
-    #             file.write(text)
-            
-    #         # Printing speech
-    #         print('Speech Detected:')
-    #         print(text)
+    
+    model = whisper.load_model("medium")
+    result = model.transcribe(audio_output_path,fp16=False)
+    print(result["text"])
+    try:
+        #text=r.recognize_google(audio)
+        # Save the text to a .txt file in the root directory
+        with open("uploads/speech_text.txt", "w") as file:
+            file.write(result["text"])
         
-    #     except:
-    #         print('Could not hear anything!')
-    with audio as source:
-        audio = r.record(source)
-        try:
-            text=r.recognize_google(audio)
-            # Save the text to a .txt file in the root directory
-            with open("uploads/speech_text.txt", "w") as file:
-                file.write(text)
-            
-            # Printing speech
-            print('Speech Detected: ')
-            print(text)
-        except:
-            print('Could not hear anything!')
-            with open("uploads/speech_text.txt", "w") as file:
-                file.write("")
+        # Printing speech
+        print('Speech Detected: ')
+        
+    except:
+        print('Could not hear anything!')
+        with open("uploads/speech_text.txt", "w") as file:
+            file.write("")
+    
+        
 
 def video_to_text(video_path):
     #----------------------------------Speech Detection Part-----------------------------------#
