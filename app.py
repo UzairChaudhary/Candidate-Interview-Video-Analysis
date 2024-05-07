@@ -204,59 +204,50 @@ def upload():
         ax = fig.add_axes([0,0,1,1])
         ax.axis('equal')
         #emotion = ['angry','disgust','fear', 'happy', 'sad']
-        emotion = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+        #emotion = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
         #counts = [result.count('angry'),result.count('disgust'),result.count('fear'),result.count('happy'),result.count('sad')]
-        counts = [result.count('Angry'),result.count('Disgust'),result.count('Fear'),result.count('Happy'),result.count('Sad'),result.count('Surprise'),result.count('Neutral')]
-        ax.pie(counts, labels = emotion,autopct='%1.2f%%')   #adding pie chart
-        # print("Angry: ",counts[0])
-        # print("Disgust: ",counts[1])
-        # print("Fear: ",counts[2])#Nervousness
-        # print("Happy: ",counts[3])
-        # print("Sad: ",counts[4])#Lack of Enthusiasm
-        # print("Surprise: ",counts[5])
-        # print("Neutral: ",counts[6])
-        img = io.BytesIO()
-        plt.savefig(img, format='png')   #saving piechart
-        img.seek(0)
-        plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode()) #piechart object that can be returned to the html
-        #return render_template("predict.html", posture = posture, smileindex=smileindex, plot_url=plot_data) #returning all the three variable that can be displayed in html
-        
-        # Calculate the scores for nervousness and confidence
-        nervousness_score = counts[2] + counts[0] + counts[1]  # Fear + Angry + Disgust
-        confidence_score = counts[3] + counts[6]  # Happy + Neutral
+        emotion_counts = [
+            result.count('Angry'),
+            result.count('Disgust'),
+            result.count('Fear'),
+            result.count('Happy'),
+            result.count('Sad'),
+            result.count('Surprise'),
+            result.count('Neutral')
+        ]
 
-        # Normalize the scores
-        total_emotions = sum(counts)
-        if total_emotions > 0:
-            nervousness_score /= total_emotions
-            confidence_score /= total_emotions
+        # Calculate the total counts
+        total_emotions = sum(emotion_counts)
+
+        # Calculate the percentage of each emotion
+        counts = [count / total_emotions * 100 for count in emotion_counts]
+
+        #ax.pie(emotion_percentages, labels=emotion, autopct='%1.2f%%')  # adding pie chart
+        #img = io.BytesIO()
+        #plt.savefig(img, format='png')  # saving pie chart
+        #img.seek(0)
+        #plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode())  # pie chart object that can be returned to the html
+
+        # Calculate the scores for nervousness and confidence
+        nervousness_score = (counts[2] + counts[0] + counts[1]) / total_emotions  # Fear + Angry + Disgust
+        confidence_score = (counts[3] + counts[6]) / total_emotions  # Happy + Neutral
 
         # Determine the emotional state based on scores
-        if nervousness_score > 0.5:
-            nervousness_state = "High"
-        else:
-            nervousness_state = "Low"
-
-        if confidence_score > 0.5:
-            confidence_state = "High"
-        else:
-            confidence_state = "Low"
-        #return jsonify({'Posture':posture,"Sentiment":overall_sentiment, 'smileIndex':smileindex, 'Angry':counts[0], 'Disgust':counts[1], 'Fear':counts[2], 'Happy':counts[3], 'Sad':counts[4], 'Surprise':counts[5], 'Neutral':counts[6]}),200
-        print("Posture: ",posture)
-        print("Sentiment: ",overall_sentiment)
-        print("Smile Index:", smileindex)
-        print("Angry:", counts[0])
-        print("Disgust:", counts[1])
-        print("Fear:", counts[2])
-        print("Happy:", counts[3])
-        print("Sad:", counts[4])  # Note: 'LackOfEnthusiasm' is replaced with 'Sad' here
-        print("Lack of Enthusiasm:", counts[4])  # Note: 'LackOfEnthusiasm' is replaced with 'Sad' here
-        print("Surprise:", counts[5])
-        print("Neutral:", counts[6])
-        print("Nervousness Score:", nervousness_score)
-        print("Confidence Score:", confidence_score)
-        print("Nervousness State:", nervousness_state)
-        print("Confidence State:", confidence_state)
+        nervousness_state = "High" if nervousness_score > 0.5 else "Low"
+        confidence_state = "High" if confidence_score > 0.5 else "Low"
+        
+        # Define weights for each parameter
+        
+        weight_smile_index = 0.2
+        weight_nervousness = 0.4
+        weight_confidence = 0.4
+        # Calculate overall score
+        overall_score = (
+            
+            weight_smile_index * smileindex +
+            weight_nervousness * nervousness_score +
+            weight_confidence * confidence_score
+        )
         
         return jsonify({
             'Posture': posture,
@@ -266,15 +257,17 @@ def upload():
             'Disgust': counts[1],
             'Fear': counts[2],
             'Happy': counts[3],
-            'Sad': counts[4],
-            'LackOfEnthusiasm': counts[4],
+            'LackOfEnthusiasm': counts[4],#sad
             'Surprise': counts[5],
             'Neutral': counts[6],
             'NervousnessScore': nervousness_score,
             'ConfidenceScore': confidence_score,
             'NervousnessState': nervousness_state,
-            'ConfidenceState': confidence_state
+            'ConfidenceState': confidence_state,
+            'OverallScore':overall_score*100
+            
         }), 200
+
     return None
 
 download_folder = 'ResumeAnalysis/Downloads'  # Update this to the desired folder path
