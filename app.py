@@ -247,7 +247,9 @@ def upload():
             weight_smile_index * smileindex +
             weight_nervousness * nervousness_score +
             weight_confidence * confidence_score
-        )
+        ) * 100
+        
+        overall_score = round(overall_score,2)
         
         return jsonify({
             'Posture': posture,
@@ -264,7 +266,7 @@ def upload():
             'ConfidenceScore': confidence_score,
             'NervousnessState': nervousness_state,
             'ConfidenceState': confidence_state,
-            'OverallScore':overall_score*100
+            'OverallScore':overall_score
             
         }), 200
 
