@@ -95,6 +95,7 @@ def video_to_text(video_path):
             print('Could not hear anything!')
 
 #-------------------------------------------------------------------------------------------#
+overall_scores = {'neg': 0, 'neu': 0, 'pos': 0, 'compound': 0}
 def text_sentiment_analysis():
     # Download VADER lexicon
     #nltk.download('vader_lexicon')
@@ -116,7 +117,7 @@ def text_sentiment_analysis():
         return "Neutral"
 
     # Perform sentiment analysis on each sentence
-    overall_scores = {'neg': 0, 'neu': 0, 'pos': 0, 'compound': 0}
+    
     for sentence in sentences:
         scores = sid.polarity_scores(sentence)
         
@@ -128,7 +129,7 @@ def text_sentiment_analysis():
         print(sentence)
         scores = sid.polarity_scores(sentence)
         print("Sentiment Score:", scores)
-        if scores['compound'] > 0:
+        if scores['compound'] > 0 and scores['pos']>scores['neu']:
             print("Overall Sentiment: Positive")
         elif scores['compound'] < 0:
             print("Overall Sentiment: Negative")
@@ -150,7 +151,7 @@ def text_sentiment_analysis():
         print("Compound Sentiment Score:", overall_scores['compound'])
 
         # Determine overall sentiment
-        if overall_scores['compound'] > 0:
+        if overall_scores['compound'] > 0  and scores['pos']>scores['neu']:
             print("Overall Sentiment: Positive")
             return "Positive"
         elif overall_scores['compound'] < 0:
@@ -222,11 +223,11 @@ def upload():
         # Calculate the percentage of each emotion
         counts = [count / total_emotions * 100 for count in emotion_counts]
 
-        ax.pie(counts, labels=emotion, autopct='%1.2f%%')  # adding pie chart
-        img = io.BytesIO()
-        plt.savefig(img, format='png')  # saving pie chart
-        img.seek(0)
-        plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode())  # pie chart object that can be returned to the html
+        #ax.pie(counts, labels=emotion, autopct='%1.2f%%')  # adding pie chart
+        #img = io.BytesIO()
+        #plt.savefig(img, format='png')  # saving pie chart
+        #img.seek(0)
+        #plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode())  # pie chart object that can be returned to the html
 
         # Calculate the scores for nervousness and confidence
         nervousness_score = (counts[2] + counts[0] + counts[1]) / total_emotions  # Fear + Angry + Disgust
@@ -255,11 +256,14 @@ def upload():
         
         
         overall_score = round(overall_score,2)
-        print(plot_data)
+        
         
         return jsonify({
             'Posture': posture,
             'Sentiment': overall_sentiment,
+            'PositiveSentiment':overall_scores['pos'],
+            'NegativeSentiment':overall_scores['neg'],
+            'NeutralSentiment':overall_scores['neu'],
             'SmileIndex': smileindex,
             'Angry': counts[0],
             'Disgust': counts[1],
@@ -273,7 +277,7 @@ def upload():
             'NervousnessState': nervousness_state,
             'ConfidenceState': confidence_state,
             'OverallScore':overall_score,
-            'plotData':plot_data
+            
             
         }), 200
 

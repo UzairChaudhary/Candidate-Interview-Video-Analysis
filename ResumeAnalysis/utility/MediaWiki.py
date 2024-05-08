@@ -8,7 +8,9 @@ def get_search_results(search_query):
     if len(results) > 0:
         title = results[0].get("title", "")
         if title:
-            return get_summary(title)
+            summary = get_summary(title)
+            #print(summary)
+            return summary
     return None
 
 def get_summary(title):

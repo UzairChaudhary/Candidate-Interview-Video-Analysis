@@ -114,10 +114,13 @@ def calculate_similarity(resume_dic, dic_jd):
             search_query = f"{skills} in technology "
             results = get_search_results(search_query)
             if results:
+                #print("results: ", results)
                 new_resume_skills.append(results) 
             else:
                 print("No matching articles found")
 
+    #print("New resume skills")
+    #print(new_resume_skills)
     if job_description_skills:
         for skill in job_description_skills:
             for resume_skill in new_resume_skills:
