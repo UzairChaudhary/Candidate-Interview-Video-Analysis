@@ -204,7 +204,7 @@ def upload():
         ax = fig.add_axes([0,0,1,1])
         ax.axis('equal')
         #emotion = ['angry','disgust','fear', 'happy', 'sad']
-        #emotion = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+        emotion = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
         #counts = [result.count('angry'),result.count('disgust'),result.count('fear'),result.count('happy'),result.count('sad')]
         emotion_counts = [
             result.count('Angry'),
@@ -222,11 +222,11 @@ def upload():
         # Calculate the percentage of each emotion
         counts = [count / total_emotions * 100 for count in emotion_counts]
 
-        #ax.pie(emotion_percentages, labels=emotion, autopct='%1.2f%%')  # adding pie chart
-        #img = io.BytesIO()
-        #plt.savefig(img, format='png')  # saving pie chart
-        #img.seek(0)
-        #plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode())  # pie chart object that can be returned to the html
+        ax.pie(counts, labels=emotion, autopct='%1.2f%%')  # adding pie chart
+        img = io.BytesIO()
+        plt.savefig(img, format='png')  # saving pie chart
+        img.seek(0)
+        plot_data = urllib.parse.quote(base64.b64encode(img.read()).decode())  # pie chart object that can be returned to the html
 
         # Calculate the scores for nervousness and confidence
         nervousness_score = (counts[2] + counts[0] + counts[1]) / total_emotions  # Fear + Angry + Disgust
@@ -247,9 +247,15 @@ def upload():
             weight_smile_index * smileindex +
             weight_nervousness * nervousness_score +
             weight_confidence * confidence_score
-        ) * 100
+        )
+        # Round the overall score to 2 decimal places
+        print("overall Score:", overall_score)
+        if (overall_score<10) :
+            overall_score *= 100
+        
         
         overall_score = round(overall_score,2)
+        print(plot_data)
         
         return jsonify({
             'Posture': posture,
@@ -266,7 +272,8 @@ def upload():
             'ConfidenceScore': confidence_score,
             'NervousnessState': nervousness_state,
             'ConfidenceState': confidence_state,
-            'OverallScore':overall_score
+            'OverallScore':overall_score,
+            'plotData':plot_data
             
         }), 200
 
