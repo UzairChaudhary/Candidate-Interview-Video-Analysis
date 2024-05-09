@@ -67,32 +67,32 @@ def vedio_to_text(path):
     
         
 
-def video_to_text(video_path):
-    #----------------------------------Speech Detection Part-----------------------------------#
-    # Fix video metadata
-    #fixed_video_path = fix_video_metadata(video_path)
-    video = VideoFileClip(video_path)
-    audio_path = video_path[:-4] + ".wav"
-    audio = video.audio
-    audio.write_audiofile(audio_path)
+# def video_to_text(video_path):
+#     #----------------------------------Speech Detection Part-----------------------------------#
+#     # Fix video metadata
+#     #fixed_video_path = fix_video_metadata(video_path)
+#     video = VideoFileClip(video_path)
+#     audio_path = video_path[:-4] + ".wav"
+#     audio = video.audio
+#     audio.write_audiofile(audio_path)
     
-    r = sr.Recognizer()
+#     r = sr.Recognizer()
 
-    with sr.AudioFile(audio_path) as source:
-        audio = r.listen(source)
-        try:
-            # Google speech recognition (You can select from other options)
-            text = r.recognize_google(audio)
-            # Save the text to a .txt file in the root directory
-            with open("uploads/speech_text.txt", "w") as file:
-                file.write(text)
+#     with sr.AudioFile(audio_path) as source:
+#         audio = r.listen(source)
+#         try:
+#             # Google speech recognition (You can select from other options)
+#             text = r.recognize_google(audio)
+#             # Save the text to a .txt file in the root directory
+#             with open("uploads/speech_text.txt", "w") as file:
+#                 file.write(text)
             
-            # Printing speech
-            print('Speech Detected:')
-            print(text)
+#             # Printing speech
+#             print('Speech Detected:')
+#             print(text)
         
-        except:
-            print('Could not hear anything!')
+#         except:
+#             print('Could not hear anything!')
 
 #-------------------------------------------------------------------------------------------#
 overall_scores = {'neg': 0, 'neu': 0, 'pos': 0, 'compound': 0}
@@ -151,7 +151,7 @@ def text_sentiment_analysis():
         print("Compound Sentiment Score:", overall_scores['compound'])
 
         # Determine overall sentiment
-        if overall_scores['compound'] > 0  and scores['pos']>scores['neu']:
+        if overall_scores['compound'] > 0  and overall_scores['pos' ]> overall_scores['neu']:
             print("Overall Sentiment: Positive")
             return "Positive"
         elif overall_scores['compound'] < 0:
@@ -201,11 +201,11 @@ def upload():
         	posture="Not Good"
         else:
         	posture="Good"
-        fig = plt.figure()     #matplotlib plot
-        ax = fig.add_axes([0,0,1,1])
-        ax.axis('equal')
+        # fig = plt.figure()     #matplotlib plot
+        # ax = fig.add_axes([0,0,1,1])
+        # ax.axis('equal')
         #emotion = ['angry','disgust','fear', 'happy', 'sad']
-        emotion = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+        #emotion = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
         #counts = [result.count('angry'),result.count('disgust'),result.count('fear'),result.count('happy'),result.count('sad')]
         emotion_counts = [
             result.count('Angry'),
