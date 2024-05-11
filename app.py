@@ -17,6 +17,12 @@ from moviepy.editor import VideoFileClip
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
+import re
+from langchain_community.llms import ollama
+
+# Initialize the LLM model
+llm = ollama.Ollama(model="llama2")
+
 from flask_cors import CORS
 
 import spacy, fitz
@@ -48,13 +54,13 @@ def vedio_to_text(path):
     # Execute the command
     os.system(command2mp3)
     
-    model = whisper.load_model("medium")
+    model = whisper.load_model("base")
     result = model.transcribe(audio_output_path,fp16=False)
     print(result["text"])
     try:
         #text=r.recognize_google(audio)
         # Save the text to a .txt file in the root directory
-        with open("uploads/speech_text.txt", "w") as file:
+        with open("uploads/speech.txt", "w") as file:
             file.write(result["text"])
         
         # Printing speech
@@ -62,7 +68,7 @@ def vedio_to_text(path):
         
     except:
         print('Could not hear anything!')
-        with open("uploads/speech_text.txt", "w") as file:
+        with open("uploads/speech.txt", "w") as file:
             file.write("")
     
         
@@ -106,7 +112,7 @@ def text_sentiment_analysis():
     # Sample paragraph for sentiment analysis
     #paragraph = "I love spending time with my friends. The weather was perfect for a picnic in the park. However, I had a terrible experience at the restaurant we went to afterward. The food was cold and the service was extremely slow. Despite that, we managed to have a good time. Overall, it was a mixed day."
     # Read the text input from a .txt file
-    file_path = "uploads/speech_text.txt"  # Change this to the path of your .txt file
+    file_path = "uploads/speech.txt"  # Change this to the path of your .txt file
     with open(file_path, "r") as file:
         paragraph = file.read()
     # Tokenize the paragraph into sentences
@@ -207,6 +213,7 @@ def upload():
         #emotion = ['angry','disgust','fear', 'happy', 'sad']
         #emotion = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
         #counts = [result.count('angry'),result.count('disgust'),result.count('fear'),result.count('happy'),result.count('sad')]
+        
         emotion_counts = [
             result.count('Angry'),
             result.count('Disgust'),
@@ -269,7 +276,7 @@ def upload():
             'Disgust': counts[1],
             'Fear': counts[2],
             'Happy': counts[3],
-            'LackOfEnthusiasm': counts[4],#sad
+            'Sad': counts[4],#sad
             'Surprise': counts[5],
             'Neutral': counts[6],
             'NervousnessScore': nervousness_score,
@@ -283,6 +290,34 @@ def upload():
 
     return None
 
+
+@app.route('/recognizeSpeech', methods=['POST'])
+def Recognize():
+    if request.method == 'POST':
+        print("Request: ")
+        print(request)
+        if 'file' in request.files:
+
+            f = request.files['file']  #getting uploaded video 
+            basepath = os.path.dirname(__file__)
+            file_path = os.path.join(basepath, 'uploads', secure_filename(f.filename))
+            f.save(file_path)  #saving uploaded video
+            vedio_to_text(file_path)
+            with open("uploads/recorded_video.txt", "r") as file:
+                data = file.read()
+                print(data)
+            os.remove(file_path)  #removing the video as we dont need it anymore
+            os.remove("uploads/recorded_video.wav")
+            os.remove("uploads/recorded_video.txt")
+        
+        
+        return jsonify({
+            'data':data
+            
+        }), 200
+
+    return None
+    
 download_folder = 'ResumeAnalysis/Downloads'  # Update this to the desired folder path
 
 # API endpoint for calculating similarity
@@ -331,7 +366,61 @@ def api_calculate_similarity():
         print(e)
         return jsonify({'error': 'Internal Server Error'}), 500
     
+def format_skills(skills):
+    if len(skills) > 1:
+        return ', '.join(skills[:-1]) + ' and ' + skills[-1]
+    return skills[0] if skills else ""
 
+def determine_level(total_questions):
+    if total_questions < 3:
+        return "Beginner"
+    elif total_questions < 7:
+        return "Intermediate"
+    else:
+        return "Tough"
+
+# API to generate questions
+@app.route('/generate_questions', methods=['POST'])
+def generate_questions():
+    data = request.get_json()
+    job_title = data['job_title']
+    skills = data['skills']
+    experience = data['experience']
+
+    formatted_skills = format_skills(skills)
+    questions = []
+    for _ in range(10):  # Generate 10 questions
+        level = determine_level(len(questions))
+        prompt = f"You are conducting an interview for the position of {job_title}. The required skills include {formatted_skills} and the candidate should have {experience} experience. Ask your next question. Make sure it's not repetitive. Keep it concise, ideally less than 10 words. Level: {level}"
+        question = llm(prompt)  # Call to your LLM model
+        questions.append(question)
+    return jsonify({"questions": questions})
+
+# API to evaluate answers
+@app.route('/evaluate_answers', methods=['POST'])
+def evaluate_answers():
+    data = request.get_json()
+    questions = data['questions']
+    answers = data['answers']
+    
+    print(answers)
+
+    evaluations = []
+    total_score = 0
+    for question, answer in zip(questions, answers):
+        prompt = f"Check whether the answer given for the asked question is correct or not? Evaluate on a scale of 10 and give a very short (maximum 10 words) reason as well question:{question}\nanswer:{answer}"
+        evaluation = llm(prompt)  # Call to your LLM model
+        score_search = re.search(r'\b(\d+)/10\b', evaluation)
+        score = int(score_search.group(1)) if score_search else 0
+        total_score += score
+        evaluations.append({"question": question, "answer": answer, "score": score})  # Capture question, answer, and score
+
+    # Normalize total_score to be out of 100
+    final_score = (total_score / len(answers)) * 10
+    final_feedback = llm("Based on the overall performance in the interview, provide detailed feedback for the candidate. The feedback must be short and less than 100 words.")
+    final_feedback = ' '.join(final_feedback.split()[:200])  # Limit feedback to 200 words
+
+    return jsonify({"evaluations": evaluations, "final_score": final_score, "final_feedback": final_feedback})
 
 if __name__ == '__main__':
     app.run(debug=True)
